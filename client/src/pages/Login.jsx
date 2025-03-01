@@ -1,3 +1,7 @@
+import {
+  useLoginUserMutation,
+  useRegisterUserMutation,
+} from "@/features/api/authApi";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,7 +14,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const Login = () => {
   const [signupInput, setSignupInput] = useState({
@@ -19,6 +25,25 @@ const Login = () => {
     password: "",
   });
   const [loginInput, setLoginInput] = useState({ email: "", password: "" });
+
+  const [
+    registerUser,
+    {
+      data: registerData,
+      error: registerError,
+      isLoading: registerIsLoading,
+      isSuccess: registerIsSuccess,
+    },
+  ] = useRegisterUserMutation();
+  const [
+    loginUser,
+    {
+      data: loginData,
+      error: loginError,
+      isLoading: loginIsLoading,
+      isSuccess: loginIsSuccess,
+    },
+  ] = useLoginUserMutation();
 
   const changeInputHandler = (e, type) => {
     const { name, value } = e.target;
@@ -29,10 +54,27 @@ const Login = () => {
     }
   };
 
-  const submitHandler = (type) => {
+  const submitHandler = async (type) => {
     const inputData = type === "signup" ? signupInput : loginInput;
-    console.log(inputData)
-  }
+    const action = type === "signup" ? registerUser : loginUser;
+    await action(inputData);
+  };
+
+  useEffect(() => {
+    if(registerIsSuccess && registerData) {
+      toast.success(registerData.message || "User registered successfully");
+    }
+    if(registerError) {
+      toast.error(registerData.data.message || "Error registering user");
+    }
+    if(loginIsSuccess && loginData) {
+      toast.success(loginData.message || "User logged in successfully");
+    }
+    if(loginError) {
+      toast.error(loginData.data.message || "Error logging in user");
+    }
+
+  }, [registerData, registerError, registerIsSuccess, loginData, loginError, loginIsSuccess]);
 
   return (
     <div className="flex items-center w-full justify-center mt-5">
@@ -88,7 +130,16 @@ const Login = () => {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={() => submitHandler("signup")}>SignUp</Button>
+              <Button disabled={registerIsLoading} onClick={() => submitHandler("signup")}>
+                {
+                  registerIsLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Please wait...
+                    </>
+                  ) : "SignUp"
+                }
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -127,7 +178,16 @@ const Login = () => {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={() => submitHandler("login")}>LogIn</Button>
+              <Button disabled={loginIsLoading} onClick={() => submitHandler("login")}>
+                {
+                  loginIsLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Please wait...
+                    </>
+                  ) : "LogIn" 
+                }
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
